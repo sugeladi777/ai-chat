@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:intl/intl.dart';
+import "api_service.dart";
+import "model_selector.dart";
+import "message_bubble.dart";
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -11,57 +11,41 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final TextEditingController _controller = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
-  final List<Map<String, String>> _messages = [];
-  List<Map<String, dynamic>> _conversationHistory = [];
-  final String _apiBaseUrl = 'http://your-backend-api.com'; // 替换为你的后端地址
-  bool _isLoading = false;
+  final TextEditingController _controller = TextEditingController(); // 输入框控制器
+  final ScrollController _scrollController = ScrollController(); // 滚动控制器
+  final List<Map<String, String>> _messages = []; // 当前对话消息列表
+  List<Map<String, dynamic>> _conversationHistory = []; // 对话历史记录
+  bool _isLoading = false; // 是否正在加载
+  bool _showModelSelector = true; // 控制模型选择按钮的显示
+  String _selectedModel = '默认模型'; // 当前选择的模型
+  String _botAvatar = 'assets/images/model_a.jpg'; // 默认 AI 头像
 
   @override
   void initState() {
     super.initState();
-    _fetchConversations();
+    _fetchConversations(); // 初始化时加载对话历史
   }
 
+  // 获取对话历史
   Future<void> _fetchConversations() async {
+    setState(() => _isLoading = true);
     try {
-      setState(() {
-        _isLoading = true;
-      });
-      final response = await http.get(Uri.parse('$_apiBaseUrl/conversations'));
-      if (response.statusCode == 200) {
-        setState(() {
-          _conversationHistory = List<Map<String, dynamic>>.from(
-            json.decode(response.body),
-          );
-        });
-      } else {
-        throw Exception('Failed to load conversations');
-      }
+      final conversations = await ApiService.fetchConversations();
+      setState(() => _conversationHistory = conversations);
     } catch (e) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('加载对话失败: $e')));
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
+  // 保存当前对话
   Future<void> _saveConversation() async {
     try {
-      final response = await http.post(
-        Uri.parse('$_apiBaseUrl/conversations'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'messages': _messages}),
-      );
-      if (response.statusCode == 201) {
-        _fetchConversations(); // 刷新对话历史
-      } else {
-        throw Exception('Failed to save conversation');
-      }
+      await ApiService.saveConversation(_messages);
+      _fetchConversations(); // 刷新对话历史
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -72,67 +56,65 @@ class _ChatScreenState extends State<ChatScreen> {
   void _sendMessage() {
     if (_controller.text.isEmpty) return;
 
+    final userMessage = _controller.text;
+
     setState(() {
+      // 添加用户消息
       _messages.add({
-        'user': _controller.text,
-        'bot': '正在生成回复...',
+        'user': userMessage,
         'timestamp': DateTime.now().toIso8601String(),
       });
     });
 
-    final userMessage = _controller.text;
     _controller.clear();
 
-    // 模拟大模型回复
+    // 模拟模型回复
     Future.delayed(const Duration(seconds: 1), () {
-      setState(() {
-        _messages.last['bot'] = '这是对 "$userMessage" 的回复';
-      });
-      _scrollToBottom();
+      if (mounted) {
+        setState(() {
+          // 添加模型回复
+          _messages.add({
+            'bot': '这是对 "$userMessage" 的回复，用于验证对话功能是否正常。',
+            'timestamp': DateTime.now().toIso8601String(),
+          });
+        });
+        _scrollToBottom(); // 滚动到底部
+      }
     });
   }
 
+  // 开始新对话
   void _startNewConversation() {
     if (_messages.isNotEmpty) {
-      _saveConversation();
+      _saveConversation(); // 保存当前对话
     }
     setState(() {
       _messages.clear();
+      _showModelSelector = true; // 显示模型选择器
     });
   }
 
+  // 加载指定对话
   Future<void> _loadConversation(int id) async {
+    setState(() => _isLoading = true);
     try {
+      final conversation = await ApiService.loadConversation(id);
       setState(() {
-        _isLoading = true;
+        _messages.clear();
+        _messages.addAll(conversation);
       });
-      final response = await http.get(
-        Uri.parse('$_apiBaseUrl/conversations/$id'),
-      );
-      if (response.statusCode == 200) {
-        final conversation = json.decode(response.body);
-        setState(() {
-          _messages.clear();
-          _messages.addAll(
-            List<Map<String, String>>.from(conversation['messages']),
-          );
-        });
-        Navigator.pop(context); // 关闭侧边栏
-        _scrollToBottom();
-      } else {
-        throw Exception('Failed to load conversation');
-      }
+      Navigator.pop(context); // 关闭侧边栏
+      _scrollToBottom(); // 滚动到底部
     } catch (e) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('加载对话失败: $e')));
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
+  // 滚动到底部
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -145,29 +127,61 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  // 选择模型
+  void _selectModel(String model, String avatar) {
+    setState(() {
+      _selectedModel = model;
+      _botAvatar = avatar; // 更新 AI 头像
+      _showModelSelector = false; // 隐藏模型选择器
+    });
+  }
+
+  // 上传附件
+  void _uploadAttachment() {
+    // 模拟上传附件逻辑
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('上传附件'),
+            content: const Text('选择附件上传功能尚未实现'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('关闭'),
+              ),
+            ],
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFF0F5), // 粉色背景
       appBar: AppBar(
-        title: const Text('AI 对话'),
+        backgroundColor: const Color(0xFFFFC0CB), // 浅粉色标题栏
+        title: const Text('AI 对话', style: TextStyle(color: Colors.white)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _startNewConversation,
+            icon: const Icon(Icons.add, color: Colors.white),
+            onPressed: _startNewConversation, // 新建对话按钮
             tooltip: '新建对话',
           ),
         ],
       ),
       drawer: Drawer(
+        backgroundColor: const Color(0xFFFFE4E1), // 浅粉色抽屉背景
         child: ListView(
           children: [
             const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
+              decoration: BoxDecoration(color: Color(0xFFFFB6C1)), // 粉红色
               child: Text(
                 '对话历史',
                 style: TextStyle(color: Colors.white, fontSize: 20),
               ),
             ),
+            // 显示对话历史列表
             ..._conversationHistory.map((conversation) {
               final id = conversation['id'];
               final lastMessage =
@@ -175,110 +189,86 @@ class _ChatScreenState extends State<ChatScreen> {
                       ? conversation['messages'].last['user']
                       : '空对话';
               return ListTile(
-                title: Text('对话 $id'),
-                subtitle: Text('最近: $lastMessage'),
-                onTap: () => _loadConversation(id),
+                title: Text(
+                  '对话 $id',
+                  style: const TextStyle(color: Colors.black),
+                ),
+                subtitle: Text(
+                  '最近: $lastMessage',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                onTap: () => _loadConversation(id), // 加载指定对话
               );
-            }),
+            }).toList(),
           ],
         ),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          if (_isLoading) const LinearProgressIndicator(),
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                final isUserMessage = message.containsKey('user');
-                return Align(
-                  alignment:
-                      isUserMessage
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                  child: Column(
-                    crossAxisAlignment:
-                        isUserMessage
-                            ? CrossAxisAlignment.end
-                            : CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.symmetric(
-                          vertical: 5,
-                          horizontal: 10,
-                        ),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isUserMessage ? Colors.blue : Colors.grey[300],
-                          borderRadius: BorderRadius.only(
-                            topLeft: const Radius.circular(10),
-                            topRight: const Radius.circular(10),
-                            bottomLeft:
-                                isUserMessage
-                                    ? const Radius.circular(10)
-                                    : Radius.zero,
-                            bottomRight:
-                                isUserMessage
-                                    ? Radius.zero
-                                    : const Radius.circular(10),
+          Column(
+            children: [
+              if (_isLoading) const LinearProgressIndicator(), // 加载指示器
+              const SizedBox(height: 16), // 在顶部留出一定的空间
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  itemCount: _messages.length,
+                  itemBuilder: (context, index) {
+                    final message = _messages[index];
+                    final isUserMessage = message.containsKey('user');
+                    return MessageBubble(
+                      message: message,
+                      isUserMessage: isUserMessage,
+                      userAvatar: 'assets/images/user.jpg', // 用户头像
+                      botAvatar: _botAvatar, // 动态设置 AI 头像
+                      modelName: _selectedModel, // 动态传递模型名称
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller, // 输入框
+                        style: const TextStyle(color: Colors.black),
+                        decoration: InputDecoration(
+                          hintText: '输入消息...',
+                          hintStyle: const TextStyle(color: Colors.grey),
+                          filled: true,
+                          fillColor: const Color(0xFFFFE4E1), // 浅粉色输入框
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(2, 2),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          isUserMessage ? message['user']! : message['bot']!,
-                          style: TextStyle(
-                            color: isUserMessage ? Colors.white : Colors.black,
-                            fontSize: 16,
-                          ),
-                          softWrap: true,
-                          maxLines: null,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        DateFormat(
-                          'HH:mm',
-                        ).format(DateTime.parse(message['timestamp']!)),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: '输入消息...',
-                      border: OutlineInputBorder(),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.add, color: Colors.pink),
+                      onPressed: _uploadAttachment, // 上传附件按钮
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF69B4), // 热粉色按钮
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: _sendMessage, // 发送消息按钮
+                      child: const Text('发送'),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _sendMessage,
-                  child: const Text('发送'),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
+          if (_showModelSelector)
+            ModelSelector(onSelectModel: _selectModel), // 模型选择器
         ],
       ),
     );
