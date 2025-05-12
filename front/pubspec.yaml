@@ -9,13 +9,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  http: ^1.3.0
-  intl: ^0.18.0
+  http: ^1.4.0
+  intl: ^0.20.2
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^5.0.0 
 
 flutter:
   uses-material-design: true
@@ -24,4 +25,6 @@ flutter:
     - assets/images/model_b.jpg
     - assets/images/model_c.jpg
     - assets/images/model_d.png
-    - assets/images/user.jpg
+    - assets/images/default_avatar.jpg
+    - assets/images/anime_girl.jpg
+    - assets/images/anime_girl_register.jpg

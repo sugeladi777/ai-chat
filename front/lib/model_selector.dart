@@ -9,10 +9,10 @@ class ModelSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     // 模型列表，包含模型名称和对应图片路径
     final List<Map<String, String>> models = [
-      {'name': '模型 A', 'image': 'assets/images/model_a.png'},
-      {'name': '模型 B', 'image': 'assets/images/model_b.jpg'},
-      {'name': '模型 C', 'image': 'assets/images/model_c.jpg'},
-      {'name': '模型 D', 'image': 'assets/images/model_d.png'},
+      {'name': '银狼', 'image': 'assets/images/model_a.png'},
+      {'name': '瓦雷莎', 'image': 'assets/images/model_b.jpg'},
+      {'name': '今汐', 'image': 'assets/images/model_c.jpg'},
+      {'name': '艾莲乔', 'image': 'assets/images/model_d.png'},
     ];
 
     return Container(
