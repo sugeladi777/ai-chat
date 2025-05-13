@@ -61,7 +61,6 @@ class ApiService {
       Uri.parse('$_apiBaseUrl/auth/me'),
       headers: _headers(withAuth: true),
     );
-    print('Response: ${response.body}');
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
@@ -170,7 +169,7 @@ class ApiService {
   }
 
   Future<void> updateNickname(String nickname) async {
-    final response = await http.put(
+    final response = await http.patch(
       Uri.parse('$_apiBaseUrl/auth/nickname'),
       headers: _headers(withAuth: true),
       body: json.encode({'nickname': nickname}),
@@ -180,13 +179,24 @@ class ApiService {
     }
   }
 
-  Future<void> setChatTitle(String chatId, String title) async {
-    final response = await http.post(
+  Future<void> setChatTitle(String chatId, String title, {String autoGenerate = 'false'}) async {
+    final Map<String, String> body = {
+      'auto_generate': autoGenerate,
+    };
+    if (title.isNotEmpty) {
+      body['title'] = title;
+    } else {
+      body['title'] = '';
+    }
+    final headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
+    };
+    final response = await http.put(
       Uri.parse('$_apiBaseUrl/chats/$chatId/title'),
-      headers: _headers(withAuth: true),
-      body: json.encode({'title': title}),
+      headers: headers,
+      body: body,
     );
-    print('Response: ${response.body}');
     if (response.statusCode != 200) {
       throw Exception('设置对话标题失败: ${response.body}');
     }

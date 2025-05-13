@@ -27,14 +27,12 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  // 控制器和状态
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<Map<String, String>> _messages = [];
   List<Map<String, dynamic>> _conversationHistory = [];
   bool _isLoading = false;
 
-  // 用户和会话相关
   String? _currentChatId;
   String? _userAvatarUrl;
   String? _userId;
@@ -100,7 +98,7 @@ class _ChatScreenState extends State<ChatScreen> {
     String customTitle = '';
     if (_currentChatId != null) {
       try {
-        await widget.apiService.setChatTitle(_currentChatId!, customTitle);
+        await widget.apiService.setChatTitle(_currentChatId!, customTitle, autoGenerate: 'true');
       } catch (e) {
         _showSnackBar('设置对话标题失败: $e');
       }
@@ -266,13 +264,19 @@ class _ChatScreenState extends State<ChatScreen> {
                   _userAvatarUrl = newAvatarPath;
                 });
               },
-              apiService: widget.apiService, // 传递
+              apiService: widget.apiService,
             ),
           ),
         );
       },
       child: DrawerHeader(
-        decoration: const BoxDecoration(color: Color(0xFFFFB6C1)),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFFFB6C1), Color(0xFFFFE4E1)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -286,18 +290,34 @@ class _ChatScreenState extends State<ChatScreen> {
                       ? NetworkImage(_userAvatarUrl!)
                       : const AssetImage('assets/images/default_avatar.jpg')
                           as ImageProvider,
-              backgroundColor: Colors.transparent,
+              backgroundColor: Colors.white,
             ),
             const SizedBox(height: 8),
             Text(
               _nickname ?? '未知昵称',
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'ZCOOLKuaiLe',
+                shadows: [
+                  Shadow(
+                    color: Colors.white,
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
             ),
             Align(
               alignment: Alignment.bottomRight,
               child: Text(
                 'UID：${_userId ?? '未知用户'}',
-                style: const TextStyle(color: Colors.white, fontSize: 12),
+                style: const TextStyle(
+                  color: Colors.grey, // 统一为黑色
+                  fontSize: 12,
+                  fontFamily: 'ZCOOLKuaiLe',
+                ),
               ),
             ),
           ],
@@ -312,11 +332,61 @@ class _ChatScreenState extends State<ChatScreen> {
       final id = conversation['_id'] ?? conversation['id'];
       final title = conversation['title'] ?? '无标题';
       return ListTile(
-        title: Text(title, style: const TextStyle(color: Colors.black)),
+        tileColor: Colors.white.withOpacity(0.85),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFF424242), // Equivalent to Colors.grey[800]
+            fontWeight: FontWeight.bold,
+            fontFamily: 'ZCOOLKuaiLe',
+          ),
+        ),
         onTap: () => _loadConversation(id.toString()),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: () => _deleteConversation(id.toString()),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.blueAccent),
+              tooltip: '修改标题',
+              onPressed: () async {
+                final controller = TextEditingController(text: title);
+                final newTitle = await showDialog<String>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('修改对话标题'),
+                    content: TextField(
+                      controller: controller,
+                      decoration: const InputDecoration(hintText: '输入新标题'),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('取消'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, controller.text.trim()),
+                        child: const Text('确定'),
+                      ),
+                    ],
+                  ),
+                );
+                if (newTitle != null && newTitle.isNotEmpty && newTitle != title) {
+                  try {
+                    await widget.apiService.setChatTitle(id.toString(), newTitle, autoGenerate: 'false');
+                    await _fetchConversationHistories();
+                    _showSnackBar('标题已更新');
+                  } catch (e) {
+                    _showSnackBar('更新标题失败: $e');
+                  }
+                }
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () => _deleteConversation(id.toString()),
+            ),
+          ],
         ),
       );
     }).toList();
@@ -329,7 +399,22 @@ class _ChatScreenState extends State<ChatScreen> {
       backgroundColor: const Color(0xFFFFF0F5),
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFC0CB),
-        title: Text(_appBarTitle, style: const TextStyle(color: Colors.white)),
+        title: Text(
+          _appBarTitle,
+          style: const TextStyle(
+            color: Colors.white, // 白色
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'ZCOOLKuaiLe',
+            shadows: [
+              Shadow(
+                color: Color(0xFFF8BBF9),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add, color: Colors.white),
@@ -341,11 +426,45 @@ class _ChatScreenState extends State<ChatScreen> {
       drawer: Drawer(
         backgroundColor: const Color(0xFFFFE4E1),
         child: ListView(
-          children: [_buildDrawerHeader(), ..._buildConversationList()],
+          padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 4),
+          children: [
+            _buildDrawerHeader(),
+            ..._buildConversationList(),
+          ],
         ),
       ),
       body: Stack(
         children: [
+          // 顶部渐变装饰
+          Positioned(
+            top: -80,
+            left: -80,
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [Colors.pinkAccent.withOpacity(0.18), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+          // 底部渐变装饰
+          Positioned(
+            bottom: -60,
+            right: -60,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [Colors.lightBlueAccent.withOpacity(0.12), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
           Column(
             children: [
               if (_isLoading) const LinearProgressIndicator(),
@@ -353,6 +472,7 @@ class _ChatScreenState extends State<ChatScreen> {
               Expanded(
                 child: ListView.builder(
                   controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   itemCount: _messages.length,
                   itemBuilder: (context, index) {
                     final message = _messages[index];
@@ -360,14 +480,14 @@ class _ChatScreenState extends State<ChatScreen> {
                     return MessageBubble(
                       message: message,
                       isUserMessage: isUserMessage,
-                      userAvatar:
-                          _userAvatarUrl ?? 'assets/images/default_avatar.jpg',
+                      userAvatar: _userAvatarUrl ?? 'assets/images/default_avatar.jpg',
                       botAvatar: _botAvatar,
                       modelName: _selectedModel,
                     );
                   },
                 ),
               ),
+              // 还原底部输入栏为原始风格
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Row(

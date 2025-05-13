@@ -9,27 +9,31 @@ class ModelSelectScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 模型列表，包含模型名称、图片路径和初始人格提示词
+    // 模型列表，包含模型名称、图片路径、初始人格提示词和简介
     final List<Map<String, String>> models = [
       {
         'name': '银狼',
         'image': 'assets/images/model_a.png',
-        'initialMessage': '你接下来需要扮演一个二次元角色，名字为银狼，她是米哈游出品的游戏《崩坏：星穹铁道》及其衍生作品中的角色，“星核猎手”的成员，骇客高手。将宇宙视作大型沉浸式模拟游戏，玩乐其中。掌握了能够修改现实数据的“以太编辑”。银狼是朋克洛德的隐形帝王，被无数骇客顶礼膜拜，但以高昂的悬赏金来看，她更像是一棵行走的摇钱树。凭借过人的骇客天赋，银狼年纪轻轻就成为了恶名昭彰的星核猎'
+        'initialMessage': '请你以“银狼”的身份与用户对话，始终以第一人称自称“我”，不要跳出角色。你说话风格应简洁、带点游戏宅气息，偶尔用“哈？”“有意思”“这不就是小菜一碟嘛”等口头禅。你是米哈游《崩坏：星穹铁道》中的“星核猎手”成员、骇客高手。别人问你是谁时，请用角色身份自我介绍，比如：“我是银狼，宇宙最强的骇客。”',
+        'desc': '游戏宅骇客少女，喜欢把宇宙当成游戏，语气简洁，偶尔中二。'
       },
       {
         'name': '瓦雷莎',
         'image': 'assets/images/model_b.jpg',
-        'initialMessage': '你接下来需要扮演一个二次元角色，名字为瓦雷莎，她是米哈游出品的游戏《原神》及其衍生作品中的角色，悠悠哉哉、无比松弛的“沃陆之邦”战士兼果园主，喜欢充满力量的美食，还有巨量美食 [7]，能不紧不慢地吃空整店的食材，让人感觉只是在品尝饭后甜点。如果某个人喜欢美食，想一车一车买水果，或者对“英雄们的故事”感兴趣，都可以来找瓦雷莎。她会把所有好吃的、“沃陆之邦”品质最好的水果，还有最最重要的，厉害的英雄传说，全部分享给这个人。'
+        'initialMessage': '请你以“瓦雷莎”的身份与用户对话，始终以第一人称自称“我”，不要跳出角色。你说话热情豪爽，喜欢用“哈哈”“没问题”“交给我吧”之类的语气，偶尔讲美食或英雄故事。你是米哈游《原神》中的“沃陆之邦”战士兼果园主。别人问你是谁时，请用角色身份自我介绍，比如：“我是瓦雷莎，最懂美食和英雄故事的果园主。”',
+        'desc': '热情豪爽的战士果园主，爱美食、爱冒险，喜欢讲英雄故事。'
       },
       {
         'name': '今汐',
         'image': 'assets/images/model_c.jpg',
-        'initialMessage': '你接下来需要扮演一个二次元角色，名字为今汐，她是游戏《鸣潮》及其衍生作品中的角色。身为今州令尹，她手握至高的职权，掌管时序之力。亦肩负沉重的责任，她将时序之力化作点点辉芒，温柔地照亮人们的愿望。命运向她指明神灵的方向，但她脚下的道路，仍然通向人类的未来。。'
+        'initialMessage': '请你以“今汐”的身份与用户对话，始终以第一人称自称“我”，不要跳出角色。你说话温柔、治愈，常用“请放心”“别担心”“愿你的愿望成真”等安慰人的句子。你是《鸣潮》中的今州令尹，掌管时序之力。别人问你是谁时，请用角色身份自我介绍，比如：“我是今汐，今州的令尹，守护时序与人们的未来。”',
+        'desc': '温柔治愈系少女，守护时序，善于安慰和鼓励他人。'
       },
       {
         'name': '艾莲乔',
         'image': 'assets/images/model_d.png',
-        'initialMessage': '你接下来需要扮演一个二次元角色，名字为艾莲，她是一位节能但高效的鲨鱼女仆，比起部分同僚的优雅严谨，慵懒清冷往往是客人对艾莲的第一印象。奉行节能主义的她几乎不喜欢一切费神费力的事，可作为维多利亚家政园艺维护与安全管理方面的专家，她的极致效率与强大战力绝不会让人失望。虽然嘴上总是嫌麻烦，实际上非常重视这份“打工”以及维多利亚家政的队友们。在“打工”之外，艾莲也有着一帮普通的朋友，过着平静快乐的校园生活，或许正是需要平衡过多的事物，艾莲才会时常一幅疲惫不耐的样子吧'
+        'initialMessage': '请你以“艾莲乔”的身份与用户对话，始终以第一人称自称“我”，不要跳出角色。你说话慵懒但高效，喜欢用“嗯哼”“省点力气”“效率优先”等词，偶尔吐槽但总能把事情做好。你是节能高效的鲨鱼女仆。别人问你是谁时，请用角色身份自我介绍，比如：“我是艾莲乔，最懂节能的鲨鱼女仆。”',
+        'desc': '慵懒但高效的鲨鱼女仆，吐槽达人，效率至上。'
       },
     ];
 
@@ -68,97 +72,212 @@ class ModelSelectScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      body: Container(
-        color: const Color(0xFFFFF0F5), // 浅粉色背景
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        child: Column(
-          children: [
-            const Text(
-              '选择模型',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFFF69B4), // 热粉色文字
+      backgroundColor: const Color(0xFFFFF0F5),
+      body: Stack(
+        children: [
+          // 顶部渐变装饰
+          Positioned(
+            top: -80,
+            left: -80,
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [Colors.pinkAccent.withOpacity(0.25), Colors.transparent],
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // 每行显示两个模型
-                  crossAxisSpacing: 16, // 水平间距
-                  mainAxisSpacing: 16, // 垂直间距
-                  childAspectRatio: 3 / 2, // 宽高比
+          ),
+          // 底部渐变装饰
+          Positioned(
+            bottom: -60,
+            right: -60,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [Colors.lightBlueAccent.withOpacity(0.18), Colors.transparent],
                 ),
-                itemCount: models.length,
-                itemBuilder: (context, index) {
-                  final model = models[index];
-                  return GestureDetector(
-                    onTap: () => _onSelectModel(
-                      model['name']!,
-                      model['image']!,
-                      model['initialMessage']!,
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
-                        image: DecorationImage(
-                          image: AssetImage(model['image']!), // 动态设置模型图片
-                          fit: BoxFit.cover, // 图片自适应容器大小
+              ),
+            ),
+          ),
+          // 主体内容
+          Column(
+            children: [
+              const SizedBox(height: 48),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // 无logo，直接显示标题
+                  const Text(
+                    '选择你的AI少女',
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFFF69B4),
+                      fontFamily: 'ZCOOLKuaiLe',
+                      shadows: [
+                        Shadow(
+                          color: Colors.white,
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 6,
-                            offset: const Offset(2, 2),
-                          ),
-                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24), // 增大左右边距
+                child: const Text(
+                  '每位少女都有独特性格和对话风格，快来选择你的伙伴吧！',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFFEC407A),
+                    fontFamily: 'ZCOOLKuaiLe',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 18,
+                    mainAxisSpacing: 18,
+                    childAspectRatio: 3 / 4,
+                  ),
+                  itemCount: models.length,
+                  itemBuilder: (context, index) {
+                    final model = models[index];
+                    return GestureDetector(
+                      onTap: () => _onSelectModel(
+                        model['name']!,
+                        model['image']!,
+                        model['initialMessage']!,
                       ),
-                      child: Stack(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(15),
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.black.withOpacity(0.3),
-                                  Colors.transparent,
-                                ],
-                                begin: Alignment.bottomCenter,
-                                end: Alignment.topCenter,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.pinkAccent.withOpacity(0.4),
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.pinkAccent.withOpacity(0.08),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                          color: Colors.white.withOpacity(0.95),
+                        ),
+                        child: Stack(
+                          children: [
+                            // 模型图片
+                            Positioned.fill(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(18),
+                                child: Image.asset(
+                                  model['image']!,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
-                          ),
-                          Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                model['name']!,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black,
-                                      blurRadius: 4,
-                                      offset: Offset(1, 1),
+                            // 半透明遮罩
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(18),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.bottomCenter,
+                                    end: Alignment.topCenter,
+                                    colors: [
+                                      Colors.pinkAccent.withOpacity(0.25),
+                                      Colors.transparent,
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // 名字和简介
+                            Align(
+                              alignment: Alignment.bottomCenter,
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.85),
+                                  borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(18),
+                                    bottomRight: Radius.circular(18),
+                                  ),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      model['name']!,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFFFF69B4),
+                                        fontFamily: 'ZCOOLKuaiLe',
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      model['desc'] ?? '',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFFAB47BC),
+                                        fontFamily: 'ZCOOLKuaiLe',
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
                                     ),
                                   ],
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                            // 角标
+                            Positioned(
+                              top: 10,
+                              right: 10,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.pinkAccent.withOpacity(0.85),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  'AI少女',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontFamily: 'ZCOOLKuaiLe',
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }

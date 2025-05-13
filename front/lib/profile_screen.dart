@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'api_service.dart';
+import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String? userId;
@@ -176,6 +177,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white),
+            tooltip: '退出登录',
+            onPressed: () {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => LoginScreen()));
+            },
+          ),
+        ],
       ),
       body: Stack(
         children: [
