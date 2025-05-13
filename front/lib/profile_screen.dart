@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'api_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String? userId;
   final Function(String) onAvatarChanged;
+  final ApiService apiService;
 
   const ProfileScreen({
     super.key,
     this.userId,
     required this.onAvatarChanged,
+    required this.apiService,
   });
 
   @override
@@ -18,28 +19,34 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  late String _userId;
   String? _avatarUrl;
   String? _nickname;
+  String? _username;
+  String? _email;
+  String? _userId;
+  String? _createdAt;
   bool _isLoading = false;
 
-  final TextEditingController _nicknameController = TextEditingController();
+  late ApiService _apiService;
 
   @override
   void initState() {
     super.initState();
-    _userId = widget.userId ?? '未知用户';
+    _apiService = widget.apiService;
     _fetchUserProfile();
   }
 
   Future<void> _fetchUserProfile() async {
     setState(() => _isLoading = true);
     try {
-      final profile = await ApiService.getUserProfile(_userId);
+      final profile = await _apiService.getCurrentUser();
       setState(() {
-        _avatarUrl = profile['avatarUrl'];
+        _avatarUrl = profile['avatar_url'];
         _nickname = profile['nickname'];
-        _nicknameController.text = _nickname ?? '';
+        _username = profile['username'];
+        _email = profile['email'];
+        _userId = profile['_id']?.toString() ?? '';
+        _createdAt = profile['created_at']?.toString().substring(0, 10) ?? '';
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -57,9 +64,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (pickedFile != null) {
       setState(() => _isLoading = true);
       try {
-        final newAvatarUrl = await ApiService.uploadUserAvatar(_userId, File(pickedFile.path));
-        setState(() => _avatarUrl = newAvatarUrl);
-        widget.onAvatarChanged(newAvatarUrl);
+        await _apiService.uploadUserAvatar(pickedFile.path);
+        final profile = await _apiService.getCurrentUser();
+        setState(() => _avatarUrl = profile['avatar_url']);
+        widget.onAvatarChanged(_avatarUrl ?? '');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('头像已更新')),
         );
@@ -73,18 +81,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _updateNickname() async {
-    final newNickname = _nicknameController.text;
-    if (newNickname.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('昵称不能为空')),
-      );
-      return;
+  Future<void> _showEditNicknameDialog() async {
+    final controller = TextEditingController(text: _nickname ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('修改昵称'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: '请输入新昵称',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+    if (result != null && result.isNotEmpty && result != _nickname) {
+      await _updateNickname(result);
     }
+  }
 
+  Future<void> _updateNickname(String newNickname) async {
     setState(() => _isLoading = true);
     try {
-      await ApiService.updateNickname(_userId, newNickname);
+      await _apiService.updateNickname(newNickname);
       setState(() => _nickname = newNickname);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('昵称已更新')),
@@ -98,16 +127,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Widget _buildInfoRow(String label, String value, {IconData? icon, VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Row(
+          children: [
+            if (icon != null) Icon(icon, color: Color(0xFFFF69B4), size: 20),
+            if (icon != null) const SizedBox(width: 6),
+            Text(
+              '$label：',
+              style: const TextStyle(
+                color: Color(0xFFFF69B4),
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
+            ),
+            Expanded(
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.black,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (onTap != null)
+              const Icon(Icons.edit, size: 18, color: Color(0xFFFF69B4)),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFB6C1), // 浅粉色标题栏
+        backgroundColor: const Color(0xFFFFB6C1),
         title: const Text(
           '个人中心',
           style: TextStyle(
             color: Colors.white,
-            fontFamily: 'CuteFont', // 使用可爱的字体
+            fontFamily: 'CuteFont',
             fontSize: 24,
           ),
         ),
@@ -117,8 +181,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : Padding(
-                  padding: const EdgeInsets.all(16.0),
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -127,7 +191,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: _changeAvatar,
                         child: CircleAvatar(
                           radius: 60,
-                          backgroundImage: _avatarUrl != null
+                          backgroundImage: _avatarUrl != null && _avatarUrl!.isNotEmpty
                               ? NetworkImage(_avatarUrl!)
                               : const AssetImage('assets/images/default_avatar.jpg') as ImageProvider,
                           backgroundColor: Colors.transparent,
@@ -143,58 +207,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // 用户昵称
-                      TextField(
-                        controller: _nicknameController,
-                        decoration: InputDecoration(
-                          labelText: '昵称',
-                          labelStyle: const TextStyle(
-                            color: Color(0xFFFF69B4),
-                            fontFamily: 'CuteFont',
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFFFFE4E1),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: BorderSide.none,
-                          ),
-                          prefixIcon: const Icon(Icons.person, color: Color(0xFFFF69B4)),
+                      // 用户基本信息
+                      Card(
+                        color: const Color(0xFFFFE4E1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF69B4),
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
+                        elevation: 4,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              _buildInfoRow('UID', _userId ?? '', icon: Icons.perm_identity),
+                              _buildInfoRow('用户名', _username ?? '', icon: Icons.account_circle),
+                              _buildInfoRow('邮箱', _email ?? '', icon: Icons.email),
+                              _buildInfoRow(
+                                '昵称',
+                                _nickname ?? '',
+                                icon: Icons.person,
+                                onTap: _showEditNicknameDialog,
+                              ),
+                              _buildInfoRow('注册时间', _createdAt ?? '', icon: Icons.calendar_today),
+                            ],
                           ),
-                          shadowColor: Colors.pinkAccent,
-                          elevation: 10,
-                        ),
-                        onPressed: _updateNickname,
-                        child: const Text(
-                          '更新昵称',
-                          style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'CuteFont'),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF69B4),
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          shadowColor: Colors.pinkAccent,
-                          elevation: 10,
-                        ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Text(
-                          '返回',
-                          style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'CuteFont'),
                         ),
                       ),
                     ],

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'chat_screen.dart';
 import 'api_service.dart';
-import 'register_screen.dart'; // 导入注册界面
+import 'register_screen.dart';
+import 'model_select_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -29,20 +29,23 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final chatId = await ApiService.login(username, password); // 假设 API 返回 chatId
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ChatScreen(initialChatId: chatId),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('登录失败: $e')),
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
+    // 登录后拿到实例
+    final apiService = await ApiService.login(username, password);
+
+    // 跳转并传递实例
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ModelSelectScreen(apiService: apiService),
+      ),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('登录失败: $e')),
+    );
+  } finally {
+    setState(() => _isLoading = false);
+  }
   }
 
   @override

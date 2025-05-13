@@ -12,16 +12,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nicknameController = TextEditingController(); // 新增昵称输入框
+  final TextEditingController _emailController = TextEditingController();
   bool _isLoading = false;
 
   Future<void> _register() async {
     final username = _usernameController.text;
+    final email = _emailController.text;
     final password = _passwordController.text;
     final nickname = _nicknameController.text;
 
-    if (username.isEmpty || password.isEmpty || nickname.isEmpty) {
+    if (username.isEmpty || email.isEmpty || password.isEmpty || nickname.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('用户名、密码和昵称不能为空')),
+        const SnackBar(content: Text('用户名、邮箱、密码和昵称不能为空')),
       );
       return;
     }
@@ -29,7 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await ApiService.register(username, password, nickname); // 调用注册接口，传递昵称
+      await ApiService.register(username, email, password, nickname); // 调用注册接口，传递昵称
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('注册成功，请登录')),
       );
@@ -100,6 +102,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderSide: BorderSide.none,
                     ),
                     prefixIcon: const Icon(Icons.person_outline, color: Color(0xFFFF69B4)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // 邮箱输入框
+                TextField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    labelText: '邮箱',
+                    labelStyle: const TextStyle(color: Color(0xFFFF69B4)),
+                    filled: true,
+                    fillColor: const Color(0xFFFFE4E1),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.email, color: Color(0xFFFF69B4)),
                   ),
                 ),
                 const SizedBox(height: 16),
