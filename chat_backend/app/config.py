@@ -5,6 +5,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Settings:
+     # 新增配置
+    SECRET_KEY = "your-secret-key-for-jwt"  # 在实际应用中应使用安全的随机密钥
+    ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24小时
+    
     # 应用配置
     APP_NAME = "Chat Backend API"
     API_V1_STR = "/api/v1"
@@ -27,5 +31,10 @@ class Settings:
     # 文件配置
     UPLOAD_DIR = "uploads"
     MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
+    
+    # 头像配置 - 新增
+    AVATAR_DIR = os.path.join(UPLOAD_DIR, "avatars")
+    MAX_AVATAR_SIZE = 2 * 1024 * 1024  # 2MB
+    ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/gif"]
 
 settings = Settings()

@@ -1,24 +1,14 @@
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from pydantic import BaseModel, Field
-from bson import ObjectId
-
-class PyObjectId(str):
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v):
-        if not ObjectId.is_valid(v):
-            raise ValueError("Invalid objectid")
-        return str(v)
+from app.models.common import PyObjectId
 
 class Message(BaseModel):
     role: str
     content: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-
+    hidden:bool=False
+    
 class Chat(BaseModel):
     id: Optional[PyObjectId] = Field(default=None, alias="_id")
     user_id: str
@@ -32,14 +22,14 @@ class Chat(BaseModel):
         validate_by_name = True
         arbitrary_types_allowed = True
         json_encoders = {
-            ObjectId: lambda oid: str(oid),
+            PyObjectId: lambda oid: str(oid),
         }
 
 class ChatCreate(BaseModel):
-    user_id: str
     title: str = "New Chat"
     model_id: Optional[str] = None
     initial_message: Optional[str] = None
+    # 用户ID现在从JWT获取，而不是从请求中提供
 
 class ChatResponse(BaseModel):
     id: str
