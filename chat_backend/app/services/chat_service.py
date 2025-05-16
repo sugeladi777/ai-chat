@@ -24,7 +24,8 @@ class ChatService:
             chat["messages"].append({
                 "role": "user",
                 "content": initial_message,
-                "timestamp": datetime.now(timezone.utc)
+                "timestamp": datetime.now(timezone.utc),
+                "hidden":True
             })
             
             # 获取AI回复
@@ -37,7 +38,8 @@ class ChatService:
             chat["messages"].append({
                 "role": "assistant",
                 "content": ai_response,
-                "timestamp": datetime.now(timezone.utc)
+                "timestamp": datetime.now(timezone.utc),
+                "hidden":True
             })
         
         result = await db.db.chats.insert_one(chat)
@@ -50,6 +52,7 @@ class ChatService:
         chat = await db.db.chats.find_one({"_id": ObjectId(chat_id)})
         if chat:
             chat["_id"] = str(chat["_id"])
+            chat["messages"]=[msg for msg in chat["messages"] if not msg.get("hidden",False)]
         return chat
     
     async def get_user_chats(self, user_id: str) -> List[Dict[str, Any]]:
@@ -76,7 +79,7 @@ class ChatService:
         添加新消息并获取AI回复
         """
         # 获取现有对话
-        chat = await self.get_chat(chat_id)
+        chat = await self.get_chat_with_hidden(chat_id)  # 使用get_chat_with_hidden而不是get_chat
         if not chat:
             raise ValueError("Chat not found")
         
@@ -145,6 +148,70 @@ class ChatService:
         result = await db.db.chats.delete_one({"_id": ObjectId(chat_id)})
         return result.deleted_count > 0
     
+    async def generate_title(self, chat_id: str) -> str:
+        """
+        使用AI生成聊天标题，但不将提示和回答添加到message中
+        """
+        # 获取聊天记录
+        chat = await self.get_chat_with_hidden(chat_id)
+        if not chat:
+            raise ValueError("Chat not found")
+        
+        # 过滤掉隐藏消息，只使用可见消息生成标题
+        visible_messages = [msg for msg in chat["messages"] if not msg.get("hidden", False)]
+        
+        # 如果没有可见消息，使用默认标题
+        if not visible_messages:
+            return "New Chat"
+        
+        # 准备提示词
+        prompt = "请主要参考用户的意图，为以下对话生成一个简短的标题（不超过20个字），只回复标题内容，不要包含其他解释：\n\n"
+        
+        # 添加对话内容（最多取前5条消息避免过长）
+        for i, msg in enumerate(visible_messages[:5]):
+            role = "用户" if msg["role"] == "user" else "助手"
+            prompt += f"{role}: {msg['content'][:100]}{'...' if len(msg['content']) > 100 else ''}\n"
+        
+        # 调用AI生成标题，但不添加到消息历史中
+        model_id = chat["model_id"]
+        
+        # 直接调用AI服务，获取生成的标题
+        title_response = await ai_service.get_response(
+            [{"role": "user", "content": prompt}],
+            model_id
+        )
+        
+        # 清理回复，去除可能的引号和多余空格
+        title = title_response.strip().strip('"\'').strip()
+        
+        # 如果标题为空或过长，使用默认值
+        if not title or len(title) > 50:
+            title = "New Chat"
+        
+        # 仅更新聊天标题，不添加任何消息
+        await db.db.chats.update_one(
+            {"_id": ObjectId(chat_id)},
+            {
+                "$set": {
+                    "title": title, 
+                    "updated_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+    
+        return title
+
+    async def get_chat_with_hidden(self, chat_id: str) -> Optional[Dict[str, Any]]:
+        """
+        获取聊天详情，包括隐藏消息
+        """
+        chat = await db.db.chats.find_one({"_id": ObjectId(chat_id)})
+        if chat:
+            chat["_id"] = str(chat["_id"])
+        return chat
+
+
+
     async def update_chat_title(self, chat_id: str, title: str) -> bool:
         """
         更新聊天标题
